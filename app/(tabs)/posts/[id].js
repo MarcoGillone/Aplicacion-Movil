@@ -29,7 +29,7 @@ export default function PostDetailScreen(){
         setLoading(true);
         try {
             const publicacion = await getJSON(`${API_base}/posts/${id}`);
-            const nombreAutor = 'Autor desconocido';
+            let nombreAutor = 'Autor desconocido';
             try {
                 const usuario = await getJSON(`${API_base}/users/${publicacion.userId}`);
                 nombreAutor = usuario?.name || nombreAutor;
@@ -68,7 +68,7 @@ export default function PostDetailScreen(){
     return(
         <ScrollView contentContainerStyle={styles.container}>
             <Text style={styles.title}> {post.title} </Text>
-            <Text style={styles.autor}> por el usuario numero {post.userId} </Text>
+            <Text style={styles.autor}> Por {post.nombreAutor} </Text>
             <Text style={styles.body}> {post.body} </Text>
 
             <Pressable style={styles.button}> <Text style={styles.buttonText}> Agregar a favoritos </Text> </Pressable>

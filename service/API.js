@@ -1,4 +1,4 @@
-export const API_base = 'https:/jsonplaceholder.typicode.com';
+export const API_base = 'https://jsonplaceholder.typicode.com';
 
 async function get(path) {
     const url  = `${API_base}${path}`;

@@ -73,7 +73,6 @@ export default function PostDetailScreen(){
 
             <Pressable style={styles.button}> <Text style={styles.buttonText}> Agregar a favoritos </Text> </Pressable>
         </ScrollView>
-    
     );
 
 }

@@ -1,6 +1,6 @@
-import { View,Text,StyleSheet, ActivityIndicator, Pressable,FlatList } from "react-native";
+import { View,Text,StyleSheet, ActivityIndicator, Pressable,FlatList, TextInput, Keyboard } from "react-native";
 import { Link } from "expo-router";
-import React,{ useEffect, useState, useCallback} from "react";
+import React,{ useEffect, useState, useCallback, useMemo} from "react";
 import { fetchPosts, fetchUsers } from "../../../service/API";
 
 export default function PostsScreen(){
@@ -8,6 +8,7 @@ export default function PostsScreen(){
     const[error,setError] = useState(null);
     const[posts, setPosts] = useState([]);
     const[refreshing, setRefreshing] = useState(false);
+    const[query, setQuery] = useState('');
 
     const cargarPost = useCallback(async () => {
         setError(null);
@@ -42,6 +43,15 @@ export default function PostsScreen(){
 
         }
     }, [cargarPost]);
+    const normalizedQuery = query.trim().toLowerCase();
+const filteredPosts = useMemo(() => {
+    if (!normalizedQuery) return posts; 
+    return posts.filter((p) => {
+      const title = String(p.title || "").toLowerCase();
+      const body = String(p.body || "").toLowerCase();
+      return title.includes(normalizedQuery) || body.includes(normalizedQuery);
+    });
+  }, [posts, normalizedQuery]);
     const preview = (text, max = 100) => typeof text === 'string' && text.length > max ? text.slice(0,max).trim() + '-' : text;
     const renderItem = ({item}) => (
         <View style={styles.card}> 
@@ -51,6 +61,25 @@ export default function PostsScreen(){
         <Link href={{pathname:'/posts/[id]', params:{id:String(item.id)}}} style={styles.more}> Ver mas</Link> 
         </View>
     );
+  const ListHeader = (
+    <View style={styles.searchBox}>
+      <TextInput
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Buscar por título o contenido…"
+        autoCapitalize="none"
+        autoCorrect={false}
+        returnKeyType="search"
+        onSubmitEditing={Keyboard.dismiss}
+        style={styles.input}
+      />
+      {query.length > 0 && (
+        <Pressable onPress={() => setQuery("")} style={styles.clearBtn}>
+          <Text style={styles.clearText}>Limpiar</Text>
+        </Pressable>
+      )}
+    </View>
+  );
     if (loading) {
         return(<View style={styles.center}> <ActivityIndicator/> <Text style={styles.info}> Cargando... </Text> </View>);
     }
@@ -62,24 +91,27 @@ export default function PostsScreen(){
         </Pressable>
         </View>);
     }
-
+    const sinResultado = !loading && posts.length > 0 && filteredPosts.length === 0;
     return(
 
         <View style={styles.listContainer}> 
         <FlatList
-        data={posts}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContainer}
-        ItemSeparatorComponent={() => <View style={{height:12}}/>}
-        refreshing = {refreshing}
-        onRefresh={onRefresh}
-        ListEmptyComponent={
-            <View style={styles.center}>
-                <Text style={styles.info}>No hay publicaciones para mostrar</Text>
-            </View>
-        }
-        ></FlatList>
+            data={filteredPosts}
+            keyExtractor={(item) => String(item.id)}
+            renderItem={renderItem}
+            contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+            ItemSeparatorComponent={() => <View style={{height:12}} />}
+            refreshing={refreshing}
+            ListHeaderComponent={ListHeader}
+            onRefresh={onRefresh}
+            ListEmptyComponent={
+                <View style={styles.center}>
+                    {sinResultado? (<Text>
+                        No se encontraron resultados para '{query}'
+                    </Text>) : (<Text style={styles.info}>No hay publicaciones para mostrar</Text>)}
+                </View>
+            }
+        />
         </View>
 
     );
@@ -90,12 +122,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 16 },
   listContainer: { flex: 1, backgroundColor: "#fff" },
   listContent: { padding: 16, paddingBottom: 24 },
-
-  title: { fontSize: 20, fontWeight: "600", marginBottom: 8 },
-  info: { fontSize: 16, marginTop: 8 },
-  small: { fontSize: 12, opacity: 0.7, marginTop: 4, textAlign: "center" },
-  error: { color: "#b00020", textAlign: "center", paddingHorizontal: 16 },
-
+  
   card: {
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
@@ -106,9 +133,31 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 16, fontWeight: "700", marginBottom: 4 },
   cardAuthor: { fontSize: 13, opacity: 0.8, marginBottom: 8 },
   cardBody: { fontSize: 14, lineHeight: 20 },
-  more: {
-    marginTop: 10,
-    fontWeight: "600",
-    textDecorationLine: "underline",
+  more: { marginTop: 10, fontWeight: "600", textDecorationLine: "underline" },
+  
+  searchBox: {
+    marginBottom: 12,
+    gap: 8,
   },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    backgroundColor: "#fff",
+  },
+  clearBtn: {
+    alignSelf: "flex-end",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: "#eee",
+  },
+  clearText: { fontWeight: "600" },
+  
+  info: { fontSize: 16, marginTop: 8, textAlign: "center" },
+  small: { fontSize: 12, opacity: 0.7, marginTop: 4, textAlign: "center" },
+  error: { color: "#b00020", textAlign: "center", paddingHorizontal: 16 },
 });

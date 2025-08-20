@@ -44,7 +44,7 @@ export default function PostsScreen(){
         }
     }, [cargarPost]);
     const normalizedQuery = query.trim().toLowerCase();
-const filteredPosts = useMemo(() => {
+    const filteredPosts = useMemo(() => {
     if (!normalizedQuery) return posts; 
     return posts.filter((p) => {
       const title = String(p.title || "").toLowerCase();
